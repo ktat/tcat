@@ -18,9 +18,7 @@ func main() {
 	if file == "" {
 		go readStdin(in)
 	} else {
-		var fp *os.File
-		var ioerr error
-		fp, ioerr = os.Open(file)
+		fp, ioerr := os.Open(file)
 		if ioerr != nil {
 			panic("cannot read file")
 		}
@@ -175,7 +173,6 @@ func parseOptions() (string, map[string]bool, string) {
 	}
 	if *num {
 		opt["num"] = true
-
 	}
 
 	if *help {
