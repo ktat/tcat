@@ -24,7 +24,7 @@ func main() {
 		if ioerr != nil {
 			panic("cannot read file")
 		}
-		readFile(in, fp)
+		go readFile(in, fp)
 	}
 
 	for {
@@ -53,14 +53,17 @@ func readFile(in chan string, fp *os.File) {
 	reader := bufio.NewReaderSize(fp, 4096)
 	for {
 		line, _, ioerr := reader.ReadLine()
-		if ioerr != io.EOF {
-			panic(ioerr)
-		} else if ioerr == io.EOF {
-			break
+		if ioerr != nil {
+			if ioerr != io.EOF {
+				panic(ioerr)
+			} else if ioerr == io.EOF {
+				break
+			}
 		}
 		l := string(line) + "\n"
 		in <- l
 	}
+	close(in)
 	ioerr := fp.Close()
 	if ioerr != nil {
 		panic(ioerr)
