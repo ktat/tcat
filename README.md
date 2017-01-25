@@ -1,6 +1,6 @@
 # tcat
 
-tcat is cammand to output data with time.
+tcat is cammand to output text with time.
 
 # Usage
 
@@ -43,3 +43,11 @@ short options are supported.
 *  -t    equivalent to -vT
 *  -v    use ^ and M- notation, except for LFD and TAB
 *  -n    number all output lines
+
+# Author
+
+Atsushi Kato (ktat)
+
+# License
+
+MIT: https://ktat.mit-license.org/2017
