@@ -1,5 +1,7 @@
 # tcat
 
+[![Circle CI](https://circleci.com/gh/ktat/tcat/tree/master.svg?style=shield)](https://circleci.com/gh/ktat/tcat/tree/master)
+
 tcat is cammand to output text with time.
 
 # Usage
