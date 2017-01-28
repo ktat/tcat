@@ -18,8 +18,10 @@ type tcat struct {
 
 func main() {
 	number := 1
+
 	tcat := tcat{
 		number: &number,
+		opt:    make(map[string]bool),
 	}
 
 	files := tcat.parseOptions()
