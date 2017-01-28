@@ -11,26 +11,27 @@ import (
 )
 
 func main() {
-	format, opt, file := parseOptions()
-	in := make(chan string)
+	format, opt, files := parseOptions()
 	number := 1
 
-	if file == "" {
+	if len(files) == 0 {
+		in := make(chan string)
 		go readStdin(in)
-	} else {
-		fp, ioerr := os.Open(file)
-		if ioerr != nil {
-			panic("cannot read file")
+		for {
+			l, ok := <-in
+			if ok == false {
+				break
+			} else {
+				fmt.Print(timedText(format, l, &number, opt))
+			}
 		}
-		go readFile(in, fp)
-	}
-
-	for {
-		l, ok := <-in
-		if ok == false {
-			break
-		} else {
-			fmt.Print(timedText(format, l, &number, opt))
+	} else {
+		for _, file := range files {
+			fp, ioerr := os.Open(file)
+			if ioerr != nil {
+				panic("cannot read file")
+			}
+			readFile(fp, format, &number, opt)
 		}
 	}
 
@@ -47,7 +48,7 @@ func readStdin(in chan string) {
 	close(in)
 }
 
-func readFile(in chan string, fp *os.File) {
+func readFile(fp *os.File, format string, number *int, opt map[string]bool) {
 	reader := bufio.NewReaderSize(fp, 4096)
 	for {
 		line, _, ioerr := reader.ReadLine()
@@ -59,9 +60,8 @@ func readFile(in chan string, fp *os.File) {
 			}
 		}
 		l := string(line) + "\n"
-		in <- l
+		fmt.Print(timedText(format, l, number, opt))
 	}
-	close(in)
 	ioerr := fp.Close()
 	if ioerr != nil {
 		panic(ioerr)
@@ -132,7 +132,7 @@ func escapeString(str string, opt map[string]bool) string {
 	return out
 }
 
-func parseOptions() (string, map[string]bool, string) {
+func parseOptions() (string, map[string]bool, []string) {
 	format := flag.String("f", "%Y-%m-%d %T", "time fomat.")
 	delimiter := flag.String("d", ": ", "delimiter.")
 	showTabs := flag.Bool("T", false, "display TAB characters as ^I")
@@ -180,11 +180,5 @@ func parseOptions() (string, map[string]bool, string) {
 		os.Exit(1)
 	}
 
-	var file string
-	args := flag.Args()
-	if len(args) > 0 {
-		file = args[0]
-	}
-
-	return *format + *delimiter, opt, file
+	return *format + *delimiter, opt, flag.Args()
 }
