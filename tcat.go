@@ -10,9 +10,19 @@ import (
 	"time"
 )
 
+type tcat struct {
+	formatStr string
+	number    *int
+	opt       map[string]bool
+}
+
 func main() {
-	format, opt, files := parseOptions()
 	number := 1
+	tcat := tcat{
+		number: &number,
+	}
+
+	files := tcat.parseOptions()
 
 	if len(files) == 0 {
 		in := make(chan string)
@@ -22,7 +32,7 @@ func main() {
 			if ok == false {
 				break
 			} else {
-				fmt.Print(timedText(format, l, &number, opt))
+				fmt.Print(tcat.timedText(l))
 			}
 		}
 	} else {
@@ -31,7 +41,7 @@ func main() {
 			if ioerr != nil {
 				panic("cannot read file")
 			}
-			readFile(fp, format, &number, opt)
+			tcat.readFileAndPrint(fp)
 		}
 	}
 
@@ -48,7 +58,7 @@ func readStdin(in chan string) {
 	close(in)
 }
 
-func readFile(fp *os.File, format string, number *int, opt map[string]bool) {
+func (tcat *tcat) readFileAndPrint(fp *os.File) {
 	reader := bufio.NewReaderSize(fp, 4096)
 	for {
 		line, _, ioerr := reader.ReadLine()
@@ -59,8 +69,7 @@ func readFile(fp *os.File, format string, number *int, opt map[string]bool) {
 				break
 			}
 		}
-		l := string(line) + "\n"
-		fmt.Print(timedText(format, l, number, opt))
+		fmt.Print(tcat.timedText(string(line) + "\n"))
 	}
 	ioerr := fp.Close()
 	if ioerr != nil {
@@ -68,7 +77,8 @@ func readFile(fp *os.File, format string, number *int, opt map[string]bool) {
 	}
 }
 
-func timedText(format string, line string, n *int, opt map[string]bool) string {
+func (tcat *tcat) timedText(line string) string {
+	format := tcat.formatStr
 	time2ref := map[string]*regexp.Regexp{
 		"01":       regexp.MustCompile("%m"),
 		"02":       regexp.MustCompile("%d"),
@@ -81,15 +91,15 @@ func timedText(format string, line string, n *int, opt map[string]bool) string {
 		"Jan":      regexp.MustCompile("%[hb]"),
 		"January":  regexp.MustCompile("%B"),
 	}
-	if opt["np"] {
-		line = escapeString(line, opt)
+	if tcat.opt["np"] {
+		line = tcat.escapeString(line)
 	}
-	if opt["ends"] {
+	if tcat.opt["ends"] {
 		line = regexp.MustCompile("([\r\n])$").ReplaceAllString(line, "$$$1")
 	}
-	if opt["num"] {
-		line = fmt.Sprintf("%6d\t", *n) + line
-		*n++
+	if tcat.opt["num"] {
+		line = fmt.Sprintf("%6d\t", *tcat.number) + line
+		*tcat.number++
 	}
 	for k, v := range time2ref {
 		format = v.ReplaceAllString(format, k)
@@ -99,7 +109,7 @@ func timedText(format string, line string, n *int, opt map[string]bool) string {
 	return t + line
 }
 
-func escapeString(str string, opt map[string]bool) string {
+func (tcat *tcat) escapeString(str string) string {
 	// from source code of cat
 	out := ""
 	for i := 0; i < len(str); i++ {
@@ -121,7 +131,7 @@ func escapeString(str string, opt map[string]bool) string {
 					out += "^" + string(rune(ch-128+64))
 				}
 			}
-		} else if ch == '\t' && opt["tabs"] {
+		} else if ch == '\t' && tcat.opt["tabs"] {
 			out += "^I"
 		} else if ch == '\n' {
 			out += "\n"
@@ -132,7 +142,7 @@ func escapeString(str string, opt map[string]bool) string {
 	return out
 }
 
-func parseOptions() (string, map[string]bool, []string) {
+func (tcat *tcat) parseOptions() []string {
 	format := flag.String("f", "%Y-%m-%d %T", "time fomat.")
 	delimiter := flag.String("d", ": ", "delimiter.")
 	showTabs := flag.Bool("T", false, "display TAB characters as ^I")
@@ -146,33 +156,31 @@ func parseOptions() (string, map[string]bool, []string) {
 
 	flag.Parse()
 
-	opt := make(map[string]bool)
-
 	if *vET {
-		opt["np"] = true
-		opt["ends"] = true
-		opt["tabs"] = true
+		tcat.opt["np"] = true
+		tcat.opt["ends"] = true
+		tcat.opt["tabs"] = true
 	} else {
 		if *vE {
-			opt["np"] = true
-			opt["ends"] = true
+			tcat.opt["np"] = true
+			tcat.opt["ends"] = true
 		}
 		if *vT {
-			opt["np"] = true
-			opt["tabs"] = true
+			tcat.opt["np"] = true
+			tcat.opt["tabs"] = true
 		}
 	}
 	if *showTabs {
-		opt["tabs"] = true
+		tcat.opt["tabs"] = true
 	}
 	if *showEnds {
-		opt["ends"] = true
+		tcat.opt["ends"] = true
 	}
 	if *showNp {
-		opt["np"] = true
+		tcat.opt["np"] = true
 	}
 	if *num {
-		opt["num"] = true
+		tcat.opt["num"] = true
 	}
 
 	if *help {
@@ -180,5 +188,6 @@ func parseOptions() (string, map[string]bool, []string) {
 		os.Exit(1)
 	}
 
-	return *format + *delimiter, opt, flag.Args()
+	tcat.formatStr = *format + *delimiter
+	return flag.Args()
 }
