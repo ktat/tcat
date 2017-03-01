@@ -12,12 +12,12 @@ import (
 
 type tcat struct {
 	formatStr string
-	number    *int
+	number    *int64
 	opt       map[string]bool
 }
 
 func main() {
-	number := 1
+	number := int64(1)
 
 	tcat := tcat{
 		number: &number,
