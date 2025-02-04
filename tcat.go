@@ -104,11 +104,10 @@ func (tcat *tcat) timedText(line string) string {
 		*tcat.number++
 	}
 	for k, v := range time2ref {
-		format = v.ReplaceAllString(format, k)
+		format = v.ReplaceAllString(format, time.Now().Format(k))
 	}
-	t := time.Now().Format(format)
 
-	return t + line
+	return format + line
 }
 
 func (tcat *tcat) escapeString(str string) string {
